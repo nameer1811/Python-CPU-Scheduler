@@ -1,26 +1,32 @@
-from random import randint
+from random import randint, uniform
 
 name = "test0"
+max_num = 20
 
-output = ""
+for proc_num in range(0,100):
+    name = "test" + str(proc_num)
 
-f = open(name,"w")
+    output = ""
 
-for i in range(10):
-    s = randint(0,20)
-    p = randint(0,9)
-    c = randint(0,25)
+    f = open(name,"w")
 
-    output += name+" "
-    output += str(s) +" "
-    output += str(p) +" "
-    output += str(c)
+    # different distribution that favors fewer entries
+    for i in range(round(uniform(1,max_num**(1/3))**3)):
+        s = randint(1,20)
+        p = randint(1,9)
+        c = randint(1,25)
 
-    for i in range(randint(0,10)):
-        i = randint(0,25)
-        c = randint(0,25)
-        output += " " + str(i) + " "
+        output += name+f"_{i}"+" "
+        output += str(s) +" "
+        output += str(p) +" "
         output += str(c)
-    output += "\n"
-f.write(output)
-f.close()
+
+        
+        for i in range(1,10):
+            i = randint(1,25)
+            c = randint(1,25)
+            output += " " + str(i) + " "
+            output += str(c)
+        output += "\n"
+    f.write(output)
+    f.close()
