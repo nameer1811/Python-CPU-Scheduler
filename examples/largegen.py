@@ -1,6 +1,8 @@
+'''
+generate process files for algorithm exploration and statistics
+'''
 from random import randint, uniform
 
-name = "test0"
 max_num = 20
 
 for proc_num in range(0,100):
@@ -12,8 +14,8 @@ for proc_num in range(0,100):
 
     # different distribution that favors fewer entries
     for i in range(round(uniform(1,max_num**(1/3))**3)):
-        s = randint(1,20)
-        p = randint(1,9)
+        s = randint(0,25)
+        p = randint(0,9)
         c = randint(1,25)
 
         output += name+f"_{i}"+" "
@@ -22,7 +24,7 @@ for proc_num in range(0,100):
         output += str(c)
 
         
-        for i in range(1,10):
+        for i in range(randint(0,10)):
             i = randint(1,25)
             c = randint(1,25)
             output += " " + str(i) + " "

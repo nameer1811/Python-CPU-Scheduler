@@ -9,23 +9,19 @@ class controller:
         # when there is instances in these, the timer should add numbers to them :3
         self.ready_queue = []
         self.cpu_focus = None
+        self.focus_time = 0
+        self.quantum = 3
         self.io_queue = []
         self.io_focus = None  # the process the io device is focusing on
-        self.algorithm = ALGORITHMS["PS"]
+        self.algorithm = ALGORITHMS["FCFS"]
         self.system_time = 0
+        self.idle_time = 0
+        self.log_file = None
 
-    # process has:
-    # id
-    # arrival time
-    # priority
-    # cpu bursts
-    # io bursts
-    # start time
-    # finish time
-    # wait time
-    # wait io time
-    # state/status: new, ready, running, waiting, terminated
-    def generate_processes(self, file: str):
+    '''
+    Make processes objects from a file
+    '''
+    def generate_processes(self, file : str):
         # adding all the processes from a file one by one with their relevant information
         for id, process_line in enumerate(open(file)):
             # import
@@ -42,10 +38,13 @@ class controller:
                 else:  # it's an io burst
                     io_bursts.append(burst)
 
-            self.processes.append(
-                process(data[0], data[1], data[2], cpu_bursts, io_bursts))
-
-    # Updating the CPU sim's system time and processing accordingly
+            self.processes.append(process(data[0], data[1], data[2], cpu_bursts, io_bursts))
+        
+        # keeping a log file for processing this
+        self.log_file = open(file+"_log","w")
+    '''
+    Updating the CPU sim's system time and processing accordingly
+    '''
     def update(self):
         # Handeling state changes
         # checks for processes which have arrived in the system and sets their state to ready, putting them in the queue
@@ -59,16 +58,17 @@ class controller:
             elif process.get_status() == VALID_STATES["WAITING"]:
                 process.io_wait_time += 1
 
-            # incremeneting the turnaround time counter
-            process.life += 1
-
         self.process_cpu()
         self.process_io()
 
         # advancing the system clock
         self.system_time += 1
 
+    '''
+    A method to put a process in the ready queue dynamically according to the algorithm used 
+    '''
     def add_to_ready_queue(self,process):
+        self.print_and_log("PROCESS",process.id,"ADDED TO READY QUEUE")
         self.ready_queue.append(process)
         process.set_status(VALID_STATES["READY"])
 
@@ -79,16 +79,34 @@ class controller:
         elif self.algorithm == ALGORITHMS["RR"]:
             pass
         
-    # Sets state to ready and adds a start time if necessary
-    def execute(self,process):
+    '''
+    Sets state of a process to ready and adds a start time if necessary
+    '''
+    def dispatch(self):
+        self.cpu_focus = self.ready_queue[0]
+
         # change the process status to running and remove it from the ready queue
-        process.set_status(VALID_STATES["RUNNING"])
-        self.ready_queue.remove(process)
+        self.print_and_log("PROCESS",self.cpu_focus.id,"DISPATCHED TO CPU")
+        self.cpu_focus.set_status(VALID_STATES["RUNNING"])
+        self.ready_queue.remove(self.cpu_focus)
 
         # Show the time the process started
-        if process.start == -1:
-            process.start = self.system_time
+        if self.cpu_focus.start == -1:
+            self.cpu_focus.start = self.system_time
 
+    def preempt(self):
+        preempted_process = self.cpu_focus
+
+        # set new focus process and remove the focus from the ready queue
+        self.dispatch()
+
+        # move prempted process to ready queue
+        self.add_to_ready_queue(preempted_process)
+        self.print_and_log("PROCESS",self.preempted_process.id,"PREMPTED")
+
+    '''
+    Handle CPU bursts according to the algorithms and parameters chosen
+    '''
     def process_cpu(self):
         # Process the cpu's focus
         if self.cpu_focus != None:
@@ -97,47 +115,58 @@ class controller:
                 if len(self.ready_queue) > 0:
                     # if the current process's priority is lower than another ready process, premept
                     if self.cpu_focus.priority > self.ready_queue[0].priority:
-                        preempted_process = self.cpu_focus
+                        self.preempt()
 
-                        # set new focus process and remove the focus from the ready queue
-                        self.cpu_focus = self.ready_queue[0]
-                        self.execute(self.cpu_focus)
+            # in round robin make sure quantum rule is abided by
+            if self.algorithm == ALGORITHMS["RR"]:
+                self.focus_time += 1
 
-                        # move prempted process to ready queue
-                        self.add_to_ready_queue(preempted_process)
+                # preempt after reaching quantum and reset focus clock
+                if self.focus_time == self.quantum:
+                    self.preempt()
+                    self.focus_time = 0
 
-            if self.algorithm != ALGORITHMS["RR"]:
-                # decrease the burst time
-                self.cpu_focus.cpu_bursts[0] -= 1
+            # decrease the burst time
+            self.cpu_focus.cpu_bursts[0] -= 1
 
-                # if the burst has gotten down to zero, either terminate the process, or check if it needs to wait on I/O
-                if self.cpu_focus.cpu_bursts[0] == 0:
-                    if self.cpu_focus.cpu_bursts[-1] == 0:
-                        self.cpu_focus.set_status(VALID_STATES["TERMINATED"])
+            # if the burst has gotten down to zero, either terminate the process, or check if it needs to wait on I/O
+            if self.cpu_focus.cpu_bursts[0] == 0:
+                # For RR, reset the quantum time checker
+                self.focus_time = 0
 
-                        # reflect the time the process ended
-                        self.cpu_focus.finish = self.system_time
+                # Terminate because there's no more bursts
+                if self.cpu_focus.cpu_bursts[-1] == 0:
+                    self.cpu_focus.set_status(VALID_STATES["TERMINATED"])
+                    self.print_and_log("PROCESS",self.cpu_focus.id,
+                        "FINISHED, TURNAROUND: " + str(self.cpu_focus.get_turnaround_time())+ 
+                        "ms, CPU WAIT: " + str(self.cpu_focus.wait_time) +
+                        "ms, IO WAIT: "+ str(self.cpu_focus.io_wait_time)+"ms")
 
-                    else:
-                        # adding the process to the IO queue if it has IO bursts and setting the process status to reflect that
-                        if len(self.cpu_focus.io_bursts) != 0:
-                            self.io_queue.append(self.cpu_focus)
-                            self.cpu_focus.set_status(VALID_STATES["WAITING"])
-                    
-                    # delete the burst now that it's at 0
-                    self.cpu_focus.cpu_bursts = self.cpu_focus.cpu_bursts[1::]
-                    self.cpu_focus = None
+                    # reflect the time the process ended
+                    self.cpu_focus.finish = self.system_time
+
+                else:
+                    # adding the process to the IO queue if it has IO bursts and setting the process status to reflect that
+                    if len(self.cpu_focus.io_bursts) != 0:
+                        self.io_queue.append(self.cpu_focus)
+                        self.cpu_focus.set_status(VALID_STATES["WAITING"])
+                        self.print_and_log("PROCESS",self.cpu_focus.id,"SENT TO IO QUEUE")
+                
+                # delete the burst now that it's at 0
+                self.cpu_focus.cpu_bursts = self.cpu_focus.cpu_bursts[1::]
+                self.cpu_focus = None
 
         # If the system is idle, it finds the next relevant process
         if self.cpu_focus == None:
             if len(self.ready_queue) > 0:
                 # Dispatch relevant process as the CPU's focus
-                self.cpu_focus = self.ready_queue[0]
+                self.dispatch()
+            else:
+                self.idle_time += 1
 
-                self.execute(self.cpu_focus)
-
-
-
+    '''
+    Handle IO bursts
+    '''
     def process_io(self):
         # if the IO device has a process to work on, it works on it 
         if self.io_focus != None:
@@ -149,6 +178,7 @@ class controller:
                 # remove the burst from the burst list now that it's at 0
                 self.io_focus.io_bursts = self.io_focus.io_bursts[1::]
                 self.add_to_ready_queue(self.io_focus)
+                self.print_and_log("PROCESS",self.io_focus.id,"DONE WITH IO")
                 self.io_focus = None
         
         # If the IO device is available and there's still processes in the IO queue give the process the IO device
@@ -160,10 +190,16 @@ class controller:
                 # remove it from the IO queue
                 self.io_queue = self.io_queue[1::]
     
+
+    '''
+    Set the algorithm used by the CPU processor (SJF, PS, etc)
+    '''
     def set_algorithm(self, algorithm):
         self.algorithm = algorithm
 
-    # print out all the relevant process info
+    '''
+    print out all the relevant process info in a nify format
+    '''
     def print_process_info(self):
         print("ID".ljust(12), "Arrival".ljust(12), "Priority".ljust(12), "CPU Bursts".ljust(12), "IO Bursts".ljust(12), "Start Time".ljust(12), "End Time".ljust(12),
               "Wait Time".ljust(12), "Wait IO Time".ljust(12), "Status".ljust(12))
@@ -202,7 +238,9 @@ class controller:
 
             print(id, arr, prio, c_bursts, io_bursts, start, finish, wait, wait_io, state)
     
-    # printing out the cpu and io device's current status and what process they're focusing on if any
+    '''
+    printing out the cpu and io device's current status and what process they're focusing on if any
+    '''
     def print_cpu_io_info(self):
         cpu_id = ("N/A" if self.cpu_focus == None else str(self.cpu_focus.id))
         io_id =  ("N/A" if self.io_focus == None else str(self.io_focus.id))
@@ -219,12 +257,63 @@ class controller:
         print(cpu_middle,io_middle)
         print("└"+cpu_edge+"┘","└"+io_edge+"┘")
 
+    def print_queueing_info(self):
+        # Display ready queue
+        display_am = min(len(self.ready_queue), 10)
+        ready_str = ", ".join(["process " + str(p.id) for p in self.ready_queue[:display_am]])
+        
+        if len(self.ready_queue) > display_am:
+            ready_str += "..."
+        
+        print("Ready Queue:", ready_str)
+
+        # Display IO queue
+        display_am = min(len(self.io_queue), 10)
+        io_str = ", ".join(["process " + str(p.id) for p in self.io_queue[:display_am]])
+        
+        if len(self.io_queue) > display_am:
+            io_str += "..."
+        
+        print("IO Queue:", io_str)
+    
+    def print_performance_metrics(self):
+        utilization = round(100*((self.system_time-self.idle_time)/self.system_time))
+        avg_turnaround_time = 0
+        avg_wait_time = 0
+        throughput = 0
+        started_processes = [p for p in self.processes if p.start != -1]
+        
+        for p in started_processes:
+            avg_turnaround_time += (p.get_turnaround_time())
+            avg_wait_time += (p.wait_time)
+
+            if (p.get_turnaround_time()) > 0:
+                throughput += (p.get_status() == VALID_STATES["TERMINATED"])/(p.get_turnaround_time()/1000)
+        avg_turnaround_time /= len(self.processes)
+        avg_wait_time /= len(self.processes)
+        
+        print("CPU Utilization: " + str(utilization) +"%")
+        print("Throughput: " + "{0:.2f}".format(throughput)+" processes/s")
+        print("AVG Turnaround Time: " + "{0:.0f}".format(avg_turnaround_time)+"ms")
+        print("AVG Waiting Time: " + "{0:.0f}".format(avg_wait_time)+"ms")
+
+    '''
+    Takes a variable number of messages to log and print it at the system time
+    '''
+    def print_and_log(self,*messages : str):
+        messages = [m if type(m) == str else str(m) for m in messages]
+        print(" ".join(messages))
+        self.log_file.write(f"{self.system_time}ms: "+" ".join(messages)+"\n")
+
+    def set_quantum(self, quantum):
+        self.quantum = quantum
+
     # first come first serve
     def fcfs(self):
         # might be superfluous
         self.ready_queue.sort(key=lambda x: x.arr_time)
 
-    # shortest job first
+    # shortest job first, non-preemptive
     def sjf(self):
         self.ready_queue.sort(key=lambda x: x.cpu_bursts[0])
 

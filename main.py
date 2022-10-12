@@ -1,29 +1,9 @@
 from re import L
 from controller import controller
+from process import VALID_STATES
 import sys, time, threading
 
-# First-come first-serve
-# Round Robin
-# Shortest Job First
-# Priority Scheduling
-# process has:
-# id 
-# arrival time
-# priority
-# cpu bursts
-# io bursts
-# start time
-# finish time
-# wait time
-# wait io time
-# state/status: new, ready, running, waiting, terminated
-
-# performance metrics:
-# cpu utilization, throughput, turnaround time, waiting time, response time
-
-# needs simulation mode, 0 for auto, 1 for manual mode
-# simulation unit time in miliseconds the time taken between tow steps (FPS basically)
-# quantum time slice
+# still needs quantum and choosing of algorithm
 
 file = sys.argv[1]
 manager = controller()
@@ -61,14 +41,29 @@ def printer():
             # Seeing if we're within the delta range to our desired update interval
             # We do this to avoid floating point issues
             if (sim_time % (1/FPS) < delta):
-                #print("{:.2f}".format(sim_time))
-                manager.update()
-                print("-"*128)
-                manager.print_process_info()
-                manager.print_cpu_io_info()
+                show_gui()
 
         start_time = time.process_time()
 
+def show_gui():
+    global paused
+    header = " TIME: " + str(manager.system_time)+"ms "
+    tick_num = max(0,128-len(header))//2
+    print()
+    print("-"*tick_num+header+"-"*(128-len(header)-tick_num))
+    manager.update()
+    print("-"*128)
+    manager.print_process_info()
+    manager.print_cpu_io_info()
+    manager.print_queueing_info()
+    print()
+    manager.print_performance_metrics()
+
+    # if all the processes are terminated, pause and then write a message
+    if all([p.get_status() == VALID_STATES["TERMINATED"] for p in manager.processes]):
+        paused = True
+        print("ALL PROCESSES DONE!")
+        manager.log_file.close()
 
 # Multithreading is used to achieve pausing and unpausing with console input
 if __name__ == '__main__':
@@ -84,13 +79,11 @@ if __name__ == '__main__':
             
             command = input()
 
-            if command == "":
+            # if you press enter, progress
+            if command == "" or command:
                 paused = 1 - paused
         else:
             command = input()
 
-            if command == "":
-                manager.update()
-                print("-"*128)
-                manager.print_process_info()
-                manager.print_cpu_io_info()
+            if command == "" or command:
+                show_gui()
