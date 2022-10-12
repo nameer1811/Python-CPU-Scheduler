@@ -84,11 +84,11 @@ class controller:
     '''
     def dispatch(self):
         self.cpu_focus = self.ready_queue[0]
+        self.ready_queue = self.ready_queue[1::]
 
         # change the process status to running and remove it from the ready queue
         self.print_and_log("PROCESS",self.cpu_focus.id,"DISPATCHED TO CPU")
         self.cpu_focus.set_status(VALID_STATES["RUNNING"])
-        self.ready_queue.remove(self.cpu_focus)
 
         # Show the time the process started
         if self.cpu_focus.start == -1:
@@ -96,66 +96,69 @@ class controller:
 
     def preempt(self):
         preempted_process = self.cpu_focus
+        self.print_and_log("PROCESS",preempted_process.id,"PREMPTED")
 
         # set new focus process and remove the focus from the ready queue
         self.dispatch()
 
         # move prempted process to ready queue
         self.add_to_ready_queue(preempted_process)
-        self.print_and_log("PROCESS",self.preempted_process.id,"PREMPTED")
+
+    def terminate(self):
+        self.cpu_focus.set_status(VALID_STATES["TERMINATED"])
+        self.print_and_log("PROCESS",self.cpu_focus.id,
+        "FINISHED, TURNAROUND: " + str(self.cpu_focus.get_turnaround_time())+ 
+        "ms, CPU WAIT: " + str(self.cpu_focus.wait_time) +
+        "ms, IO WAIT: "+ str(self.cpu_focus.io_wait_time)+"ms")
 
     '''
     Handle CPU bursts according to the algorithms and parameters chosen
     '''
     def process_cpu(self):
+        # Preempting in priority scheduling
+        if self.algorithm == ALGORITHMS["PS"]:
+            if len(self.ready_queue) > 0:
+                # if the current process's priority is lower than another ready process, premept
+                if self.cpu_focus.priority > self.ready_queue[0].priority:
+                    self.preempt()
+
+        # in round robin make sure quantum rule is abided by
+        if self.algorithm == ALGORITHMS["RR"]:
+            # preempt after reaching quantum and reset focus clock
+            if self.focus_time == self.quantum:
+                self.preempt()
+                self.focus_time = 0
+            self.focus_time += 1
+
         # Process the cpu's focus
         if self.cpu_focus != None:
-            # Preempting in priority scheduling
-            if self.algorithm == ALGORITHMS["PS"]:
-                if len(self.ready_queue) > 0:
-                    # if the current process's priority is lower than another ready process, premept
-                    if self.cpu_focus.priority > self.ready_queue[0].priority:
-                        self.preempt()
+            # decrease the burst time
+            if (len(self.cpu_focus.cpu_bursts) > 0):
+                self.cpu_focus.cpu_bursts[0] -= 1
 
-            # in round robin make sure quantum rule is abided by
-            if self.algorithm == ALGORITHMS["RR"]:
-                self.focus_time += 1
-
-                # preempt after reaching quantum and reset focus clock
-                if self.focus_time == self.quantum:
-                    self.preempt()
+                # if the burst has gotten down to zero, either terminate the process, or check if it needs to wait on I/O
+                if self.cpu_focus.cpu_bursts[0] == 0:
+                    # For RR, reset the quantum time checker
                     self.focus_time = 0
 
-            # decrease the burst time
-            self.cpu_focus.cpu_bursts[0] -= 1
+                    # Terminate because there's no more bursts
+                    if self.cpu_focus.cpu_bursts[-1] == 0:
+                        self.terminate()
 
-            # if the burst has gotten down to zero, either terminate the process, or check if it needs to wait on I/O
-            if self.cpu_focus.cpu_bursts[0] == 0:
-                # For RR, reset the quantum time checker
-                self.focus_time = 0
+                        # reflect the time the process ended
+                        self.cpu_focus.finish = self.system_time
 
-                # Terminate because there's no more bursts
-                if self.cpu_focus.cpu_bursts[-1] == 0:
-                    self.cpu_focus.set_status(VALID_STATES["TERMINATED"])
-                    self.print_and_log("PROCESS",self.cpu_focus.id,
-                        "FINISHED, TURNAROUND: " + str(self.cpu_focus.get_turnaround_time())+ 
-                        "ms, CPU WAIT: " + str(self.cpu_focus.wait_time) +
-                        "ms, IO WAIT: "+ str(self.cpu_focus.io_wait_time)+"ms")
-
-                    # reflect the time the process ended
-                    self.cpu_focus.finish = self.system_time
-
-                else:
-                    # adding the process to the IO queue if it has IO bursts and setting the process status to reflect that
-                    if len(self.cpu_focus.io_bursts) != 0:
-                        self.io_queue.append(self.cpu_focus)
-                        self.cpu_focus.set_status(VALID_STATES["WAITING"])
-                        self.print_and_log("PROCESS",self.cpu_focus.id,"SENT TO IO QUEUE")
-                
-                # delete the burst now that it's at 0
-                self.cpu_focus.cpu_bursts = self.cpu_focus.cpu_bursts[1::]
-                self.cpu_focus = None
-
+                    else:
+                        # adding the process to the IO queue if it has IO bursts and setting the process status to reflect that
+                        if len(self.cpu_focus.io_bursts) != 0:
+                            self.io_queue.append(self.cpu_focus)
+                            self.cpu_focus.set_status(VALID_STATES["WAITING"])
+                            self.print_and_log("PROCESS",self.cpu_focus.id,"SENT TO IO QUEUE")
+                    
+                    # delete the burst now that it's at 0
+                    self.cpu_focus.cpu_bursts = self.cpu_focus.cpu_bursts[1::]
+                    self.cpu_focus = None
+            
         # If the system is idle, it finds the next relevant process
         if self.cpu_focus == None:
             if len(self.ready_queue) > 0:
