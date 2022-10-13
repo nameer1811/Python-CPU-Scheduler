@@ -4,7 +4,23 @@ import sys, time, threading
 
 ALGORITHM_STRINGS = dict((v, k) for k, v in ALGORITHMS.items())
 
-if len(sys.argv) > 1:
+if ("-help" in sys.argv):
+            print("""The CPU Scheduler Program was written in Python 3.8. There is no graphical user interface implemented and everything is command line based. The program takes in command line arguments and reports it back in the command line interface.
+
+            Example - python .\cpu_scheduling_sim.py "test_file_name" -auto -fps 240 -SJF 
+
+            Command Line Arguments
+            -auto     makes the program run automatically, without this flag it will be in manual mode
+            -fcfs     sets the scheduling algorithm to first come first serve                                                
+            -sjf      sets the scheduling algorithm to short job first                                                       
+            -ps       sets the scheduling algorithm to priority scheduling                                                   
+            -rr       sets the scheduling algorithm to round robin                                                           
+            -quantum  requires an integer value after the flag, sets the quantum time used in the round robin algorithm      
+            -fps      requires an integer value after the flag, sets how many milliseconds to simulate per real world second
+            -help     prints out all the arguments that can be provided to the command line
+per real world second """)
+
+elif len(sys.argv) > 1:
     file = sys.argv[1]
 
     manager = controller()
@@ -35,6 +51,8 @@ if len(sys.argv) > 1:
             manager.set_quantum(int(sys.argv[sys.argv.index("-quantum")+1]))
         except:
             print("Invalid or Null quantum entered, defaulting to 3")
+            
+  
 
     paused = False
     running = True
