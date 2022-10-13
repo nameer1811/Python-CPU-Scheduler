@@ -10,10 +10,10 @@ if len(sys.argv) > 1:
     manager = controller()
     manager.generate_processes(file)
     FPS = 60
-    auto_mode = ("-auto" in sys.argv)
+    auto_mode = ("--auto" in sys.argv)
 
     try:
-        manager.set_algorithm(["-"+a.lower() in sys.argv for a in ALGORITHMS].index(True)) 
+        manager.set_algorithm(["--"+a.lower() in sys.argv for a in ALGORITHMS].index(True)) 
     except:
         pass
 
@@ -24,13 +24,13 @@ if len(sys.argv) > 1:
         print()
         print("-"*128)
 
-    if ("-fps" in sys.argv):
+    if ("--fps" in sys.argv):
         try:
             FPS = int(sys.argv[sys.argv.index("-fps")+1])
         except:
             print("Invalid or Null FPS entered, defaulting to 60")
 
-    if ("-quantum" in sys.argv):
+    if ("--quantum" in sys.argv):
         try:
             manager.set_quantum(int(sys.argv[sys.argv.index("-quantum")+1]))
         except:
@@ -53,12 +53,12 @@ if len(sys.argv) > 1:
                 # Seeing if we're within the delta range to our desired update interval
                 # We do this to avoid floating point issues
                 if (sim_time % (1/FPS) < delta):
-                    show_gui()
+                    display_sim()
 
             start_time = time.process_time()
         sys.exit()
 
-    def show_gui():
+    def display_sim():
         global paused, running
         header = " TIME: " + str(manager.system_time)+"ms "
         tick_num = max(0,128-len(header))//2
@@ -108,7 +108,7 @@ if len(sys.argv) > 1:
                     command = input()
 
                     if command == "" or command:
-                        show_gui()
+                        display_sim()
         sys.exit()
     else:
         print("No File Provided, Closing")

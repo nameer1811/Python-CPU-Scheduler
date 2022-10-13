@@ -1,4 +1,7 @@
 from process import process, VALID_STATES
+import csv, os
+
+performance_metrics = csv.writer(open('performance0.csv', 'w'))
 
 ALGORITHMS = {"FCFS": 0, "SJF": 1, "RR": 2, "PS": 3}
 STATE_STRING = dict((v, k) for k, v in VALID_STATES.items())
@@ -41,7 +44,13 @@ class controller:
             self.processes.append(process(data[0], data[1], data[2], cpu_bursts, io_bursts))
         
         # keeping a log file for processing this
-        self.log_file = open(file+"_log","w")
+        folder = "".join(file.split("/")[1:-1])
+        file_name = file.split("/")[-1]
+
+        if os.path.isdir(folder):
+            os.mkdir(folder+"log/")
+        
+        self.log_file = open(folder+"log/"+file_name+"_log","w")
     '''
     Updating the CPU sim's system time and processing accordingly
     '''
@@ -193,12 +202,13 @@ class controller:
                 # remove it from the IO queue
                 self.io_queue = self.io_queue[1::]
     
-
     '''
     Set the algorithm used by the CPU processor (SJF, PS, etc)
     '''
     def set_algorithm(self, algorithm):
+        global performance_metrics
         self.algorithm = algorithm
+        performance_metrics = csv.writer(open(f'performance{algorithm}.csv', 'w'))
 
     '''
     print out all the relevant process info in a nify format
@@ -260,6 +270,9 @@ class controller:
         print(cpu_middle,io_middle)
         print("└"+cpu_edge+"┘","└"+io_edge+"┘")
 
+    '''
+    printing out what processes are in the ready and io queues
+    '''
     def print_queueing_info(self):
         # Display ready queue
         display_am = min(len(self.ready_queue), 10)
@@ -280,9 +293,11 @@ class controller:
         print("IO Queue:", io_str)
     
     def print_performance_metrics(self):
+        global performance_metrics
         utilization = round(100*((self.system_time-self.idle_time)/self.system_time))
         avg_turnaround_time = 0
         avg_wait_time = 0
+        avg_response_time = 0
         throughput = 0
         started_processes = [p for p in self.processes if p.start != -1]
         
@@ -290,15 +305,23 @@ class controller:
             avg_turnaround_time += (p.get_turnaround_time())
             avg_wait_time += (p.wait_time)
 
+            if p.start != -1:
+                avg_response_time += p.start-p.arr_time
+
             if (p.get_turnaround_time()) > 0:
                 throughput += (p.get_status() == VALID_STATES["TERMINATED"])/(p.get_turnaround_time()/1000)
         avg_turnaround_time /= len(self.processes)
         avg_wait_time /= len(self.processes)
+        avg_response_time /= len(self.processes)
         
         print("CPU Utilization: " + str(utilization) +"%")
         print("Throughput: " + "{0:.2f}".format(throughput)+" processes/s")
         print("AVG Turnaround Time: " + "{0:.0f}".format(avg_turnaround_time)+"ms")
         print("AVG Waiting Time: " + "{0:.0f}".format(avg_wait_time)+"ms")
+        print("AVG Response Time: " + "{0:.0f}".format(avg_response_time)+"ms")
+
+        performance_metrics.writerow([utilization,throughput,avg_turnaround_time,avg_wait_time])
+
 
     '''
     Takes a variable number of messages to log and print it at the system time
@@ -319,18 +342,6 @@ class controller:
     # shortest job first, non-preemptive
     def sjf(self):
         self.ready_queue.sort(key=lambda x: x.cpu_bursts[0])
-
-    def round_robin(self):
-        '''self.fcfs()
-
-        for proc in self.processes:
-            # If there's bursts left for the process, then process it
-            if len(proc.cpu_bursts) > 0:
-                proc.cpu_bursts[0] -= self.quantum
-            elif len(proc.cpu_bursts) > 0:
-                # Remove empty time bursts from the CPU bursts stack
-                proc.cpu_bursts = proc.cpu_bursts[1::]'''
-        pass
 
     def priority_scheduling(self):
         self.ready_queue.sort(key=lambda x: x.priority)
