@@ -1,6 +1,6 @@
 from random import randint
 
-name = "test" + str(randint(0,1000))
+name = "test" + str(randint(0,100))
 f = open(name,"w")
 s = randint(1,20)
 p = randint(1,9)
