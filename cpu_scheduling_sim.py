@@ -7,7 +7,7 @@ ALGORITHM_STRINGS = dict((v, k) for k, v in ALGORITHMS.items())
 if ("-help" in sys.argv):
             print("""The CPU Scheduler Program was written in Python 3.8. There is no graphical user interface implemented and everything is command line based. The program takes in command line arguments and reports it back in the command line interface.
 
-            Example - python .\cpu_scheduling_sim.py ".\examples\test9" -auto -fps 240 -SJF 
+            Example - python .\cpu_scheduling_sim.py "test_file_name" -auto -fps 240 -SJF 
 
             Command Line Arguments
             -auto     makes the program run automatically, without this flag it will be in manual mode
