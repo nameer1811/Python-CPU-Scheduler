@@ -2,8 +2,8 @@ from process import process, VALID_STATES
 import csv, os
 
 # for generating performance reports, I'm just gonna keep this here
-#performance_metrics = csv.writer(open('performance0.csv', 'w'))
-#performance_metrics.writerow(["CPU Utilization","Throughput","AVG Turnaround Time","AVG Waiting Time","AVG Response Time"])
+performance_metrics = csv.writer(open('performance0.csv', 'w'))
+performance_metrics.writerow(["CPU Utilization","Throughput","AVG Turnaround Time","AVG Waiting Time","AVG Response Time"])
 
 ALGORITHMS = {"FCFS": 0, "SJF": 1, "RR": 2, "PS": 3}
 STATE_STRING = dict((v, k) for k, v in VALID_STATES.items())
@@ -297,7 +297,6 @@ class controller:
         print("IO Queue:", io_str)
     
     # for generating performance reports, I'm just gonna keep this here
-    '''
     def print_performance_metrics(self):
         global performance_metrics
         utilization = round(100*((self.system_time-self.idle_time)/self.system_time))
@@ -327,7 +326,6 @@ class controller:
         print("AVG Response Time: " + "{0:.0f}".format(avg_response_time)+"ms")
 
         performance_metrics.writerow([utilization,throughput,avg_turnaround_time,avg_wait_time,avg_response_time])
-    '''
 
     '''
     Takes a variable number of messages to log and print it at the system time

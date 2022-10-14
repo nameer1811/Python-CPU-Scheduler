@@ -4,7 +4,7 @@ import sys, time, threading
 
 ALGORITHM_STRINGS = dict((v, k) for k, v in ALGORITHMS.items())
 
-if ("-help" in sys.argv):
+if ("--help" in sys.argv):
             print("""The CPU Scheduler Program was written in Python 3.8. There is no graphical user interface implemented and everything is command line based. The program takes in command line arguments and reports it back in the command line interface.
 
             Example - python .\cpu_scheduling_sim.py "test_file_name" -auto -fps 240 -SJF 
@@ -42,7 +42,7 @@ elif len(sys.argv) > 1:
 
     if ("--fps" in sys.argv):
         try:
-            FPS = int(sys.argv[sys.argv.index("--fps")+1])
+            FPS = int(sys.argv[sys.argv.index("-fps")+1])
         except:
             print("Invalid or Null FPS entered, defaulting to 60")
 
@@ -92,7 +92,7 @@ elif len(sys.argv) > 1:
         manager.print_queueing_info()
 
         print()
-        #manager.print_performance_metrics()
+        manager.print_performance_metrics()
 
         # if all the processes are terminated, pause and then write a message
         if all([p.get_status() == VALID_STATES["TERMINATED"] for p in manager.processes]):
