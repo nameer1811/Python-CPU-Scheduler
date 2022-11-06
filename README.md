@@ -13,7 +13,7 @@ the user. No flags are required and they only change the default functioning of 
 `--rr` sets the scheduling algorithm to round robin  
 `--quantum` requires an integer value after the flag, sets the quantum time used in the round robin algorithm  
 `--fps` requires an integer value after the flag, sets how many milliseconds to simulate per real world second  
-`-- help, --h` prints out all the arguments that can be provided to the command line  
+`--help, --h` prints out all the arguments that can be provided to the command line  
 Flags for choosing scheduling algorithms and providing simulation details
 In automatic mode, to start and stop the program, press the enter key. If manual mode, press enter to advance
 the program one millisecond.
@@ -105,6 +105,7 @@ We started the project in Java, but we kept running into issues with it having m
 nuities between our system environments. This prompted us to change our implementation to Python. Due to
 this, some of our contributions may not be visible in the current state of the program, but nevertheless they
 were a vital part of figuring out how to approach this once we switched platforms.  
+  
 **David**: Did bug fixing on the JAVA project. After switching to Python, devised the process import system and
 developed the process scheduling system. Heavily commented and revised all the code in order for it to be as
 modular and reliable as possible. Implemented the delta timing used in the simulation and added polish in
