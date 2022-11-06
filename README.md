@@ -23,6 +23,7 @@ cases, the generator creates up to 10 processes, with a random priority between 
 0 and 20 milliseconds, and up to 10 alternating CPU and IO bursts that last between 0 and 25 milliseconds.
 The largest test case we used had 100 processes and generated the most clear data. All the test files can be
 found in the testfiles directory. Here is an example of what they look like:  
+  
 test17_0 9 1 11 20 4 13 9 23 8 23 16  
 test17_1 20 8 23 20 17 14 14 9 14 18 13  
 test17_2 20 6 17 11 13 19 20 2 9 1 6 8 1 1 18 25 8  
@@ -108,14 +109,17 @@ were a vital part of figuring out how to approach this once we switched platform
 developed the process scheduling system. Heavily commented and revised all the code in order for it to be as
 modular and reliable as possible. Implemented the delta timing used in the simulation and added polish in
 various places as the program was developed. Helped develop the documentation.  
+  
 **Fahad**: Initially developed the back-end of the JAVA program. The program failed and could not fix a lot of
 problems that were reviewed so switched the program to Python, which the three of us were more familiar
 with. Created the process.py file and coded the scheduling algorithms for the Python project. Wrote the code
 to generate log after running the program. Worked on the documentation and performance comparison.  
+  
 **Himanshu**: Initially developed the front-end of the JAVA program. The program failed, the outputs were
 not showing correctly, and GUI was finicky. Switched to Python and worked on making the command line
 arguments work. Wrote the code for the exgen.py, which creates example files for the program and stores it in
-the examples directory. Also, worked on the documentation and performance comparison.
+the examples directory. Also, worked on the documentation and performance comparison.  
+  
 ## 5 Conclusion
 This project was designed to simulate the short-term scheduler in a multiprocessor operating system. A
 program was developed to implement a simulator of CPU scheduling with different scheduling algorithms such
