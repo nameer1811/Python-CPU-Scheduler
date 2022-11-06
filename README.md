@@ -23,7 +23,7 @@ cases, the generator creates up to 10 processes, with a random priority between 
 0 and 20 milliseconds, and up to 10 alternating CPU and IO bursts that last between 0 and 25 milliseconds.
 The largest test case we used had 100 processes and generated the most clear data. All the test files can be
 found in the testfiles directory. Here is an example of what they look like:  
-test17_0 9 1 11 20 4 13 9 23 8 23 16  
+`test17_0 9 1 11 20 4 13 9 23 8 23 16  
 test17_1 20 8 23 20 17 14 14 9 14 18 13  
 test17_2 20 6 17 11 13 19 20 2 9 1 6 8 1 1 18 25 8  
 test17_3 13 8 8 20 12 8 10  
@@ -41,17 +41,17 @@ test17_14 6 0 16 7 13 13 14 8 24 8 5 9 9
 test17_15 20 9 12 12 4 25 25 9 15 2 23 25 9 12 16 10 4 11 1 8 25 23 2  
 test17_16 17 0 12 11 3 18 21 10 8 2 22 6 8  
 test17_17 12 3 4 5 8 5 11 12 21 8 6 23 8 21 15 7 24 3 16  
-test17_18 3 3 19 1 6 8 22 1 22 18 8 16 17 1 25 20 21  
-prioritytest0 0 0 20  
+test17_18 3 3 19 1 6 8 22 1 22 18 8 16 17 1 25 20 21`    
+`prioritytest0 0 0 20  
 prioritytest1 0 1 20  
 prioritytest2 0 2 20  
 prioritytest3 0 4 30 10 1  
-prioritytest4 0 5 30 10 1  
-fcfstest 0 0 20  
+prioritytest4 0 5 30 10 1`  
+`fcfstest 0 0 20  
 fcfstest 1 0 20  
 fcfstest 2 0 20  
 fcfstest 3 0 20  
-fcfstest 4 0 20  
+fcfstest 4 0 20`  
 
 ### 1.3 Main Program
 To run the program, run the python file cpu scheduling sim.py like you would any other python file, followed
